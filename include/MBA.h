@@ -103,7 +103,7 @@ class MBA {
   bool adjustForBaseSurface();
 
 public:
-
+		
   MBA(){};
 
   /** Constructor with (standard) shared pointers to scattered data

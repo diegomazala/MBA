@@ -59,6 +59,7 @@ using namespace std;
 
 using namespace std;
 
+
 namespace {
     vector<UCBspl_real> generate_smoothing_filter();
     UCBspl_real extrapolate_point(int i, int j, const GenMatrixType& matrix);
@@ -197,10 +198,10 @@ void MBA::smoothMatrix(GenMatrixType& matrix, int no_iter)
 void MBA::smoothZeros(int no_iter) 
 //===========================================================================
 {
-    cout << "Smoothing zeros with " << no_iter << " iterations.\n";
     if (no_iter == 0)
-	return;
+		return;
 
+	cout << "Smoothing zeros with " << no_iter << " iterations.\n";
     cout << "Flagging zeros:\n";
     GenMatrix<bool> zeromat(PHI_->noX(), PHI_->noY());
     flagZeros(zeromat);
@@ -543,15 +544,16 @@ void MBA::MBAalg(int m0, int n0, int h, int num_smoothing) {
   
     // If domain is not set
     if (data_.umin() == MBA_UNDEFREAL)
-	data_.initDefaultDomain();
+		data_.initDefaultDomain();
   
+	std::cout << "-- Building default domain..." << std::endl;
     data_.buildBaseSurface();
   
     m_ = m0;
     n_ = n0;
   
     if (PHI_.get() == NULL)
-	PHI_.reset(new GenMatrix<UCBspl_real>);
+		PHI_.reset(new GenMatrix<UCBspl_real>);
 
     // if h = 0, i.e. only one level, do it simple
     if (h == 0) {
@@ -604,8 +606,9 @@ void MBA::MBAalg(int m0, int n0, int h, int num_smoothing) {
     int noPoints = data_.size();
     int k = 0;
 
-    while(k <= h) {
-      
+    while(k <= h) 
+	{
+		std::cout << "-- Computing k = " << k << " of h = " << h << std::endl;
 	// PHI_ from P by the BA algorithm using P
 	BAalg();
 	smoothZeros(num_smoothing);

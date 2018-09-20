@@ -1,15 +1,19 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 PROJECT(mba)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
 
 # Find modules
-
-FIND_PACKAGE(Boost REQUIRED)
+find_package(Boost REQUIRED)
+find_package(OpenMesh REQUIRED)
 
 
 # Include directories
-
 INCLUDE_DIRECTORIES(
   ${mba_SOURCE_DIR}/include
   ${Boost_INCLUDE_DIRS}
@@ -20,6 +24,13 @@ INCLUDE_DIRECTORIES(
 
 SET(DEPLIBS
   )
+
+
+if (MSVC)
+	add_compile_options(/W4)
+else()
+	add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
 
 # Make the mba library
@@ -48,7 +59,9 @@ FILE(GLOB mba_APPS app/*.C app/*.cpp)
 FOREACH(app ${mba_APPS})
   GET_FILENAME_COMPONENT(appname ${app} NAME_WE)
   ADD_EXECUTABLE(${appname} ${app})
-  TARGET_LINK_LIBRARIES(${appname} mba ${DEPLIBS})
+  target_include_directories (${appname} PRIVATE ${OPENMESH_INCLUDE_DIRS})
+  target_compile_features(${appname} PRIVATE cxx_std_17)
+  TARGET_LINK_LIBRARIES(${appname} mba ${DEPLIBS} ${OPENMESH_LIBRARIES})
 ENDFOREACH(app)
 
 # Copy data
@@ -74,6 +87,7 @@ IF(WIN32)
     FILES_MATCHING PATTERN "*.h"
     PATTERN ".svn" EXCLUDE
     )
+	
 ELSE(WIN32)
   # Linux
   # lib
@@ -84,6 +98,9 @@ ELSE(WIN32)
     FILES_MATCHING PATTERN "*.h"
     PATTERN ".svn" EXCLUDE
     )
+
+	find_package(OpenMesh)
+
 ENDIF(WIN32)
 
 
