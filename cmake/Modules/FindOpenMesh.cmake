@@ -53,14 +53,14 @@
 #                                                                            
 #===========================================================================
 
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.6)
 
 
 #if already found via finder or simulated finder in openmesh CMakeLists.txt, skip the search
 IF (NOT OPENMESH_FOUND) 
 
 if (WIN32)
-	set (SEARCH_PATHS "$ENV{OpenMesh_DIR}" "$ENV{OpenMesh_LIBRARY_DIR}")
+	set (SEARCH_PATHS "$ENV{OpenMesh_DIR}")
 else()
 	set (SEARCH_PATHS /usr/local)
 endif()
@@ -92,7 +92,7 @@ endif()
 
   set(OPENMESH_LIBRARIES ${OPENMESH_CORE_LIBRARY} ${OPENMESH_TOOLS_LIBRARY} )
   set(OPENMESH_INCLUDE_DIRS ${OPENMESH_INCLUDE_DIR} )
-
+  
 #checks, if OPENMESH was found and sets OPENMESH_FOUND if so
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(OpenMesh  DEFAULT_MSG
