@@ -157,11 +157,19 @@ void mba_to_mesh(UCBspl::SplineSurface& interp, TriMesh& mesh,
 
 int main(int argc, char* argv[])
 {
+	if (argc != 5)
+	{
+		std::cout 
+			<< "Usage: app <mesh_file> < m_n > < h > < y/z > \n"
+			<< "Usage: app ../data/face.obj 5 3 z \n";
+		return EXIT_FAILURE;
+	}
+	
 	g_filename_in = argv[1];
 	const uint16_t m0 = atoi(argv[2]);
 	const uint16_t n0 = m0;
 	const uint16_t h = atoi(argv[3]);
-	const std::string xyz_order = argv[4];
+	const char z_function = argv[4][0];
 	g_filename_out = build_output_filename(m0, n0, h);
 
 	TriMesh mesh_in;
@@ -181,7 +189,7 @@ int main(int argc, char* argv[])
 	std::shared_ptr<dVec> z_arr(new std::vector<double>);
 
 	int z_index = 2;
-	if (xyz_order == "xzy")
+	if (z_function == 'y')
 	{
 		z_index = 1;
 		mesh_to_vecs(mesh_in, min_max_vert, u_arr, z_arr, v_arr);
