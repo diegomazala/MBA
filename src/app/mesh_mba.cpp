@@ -109,7 +109,7 @@ constexpr T ndc(T v, T min, T max) // normalize to [0, 1]
 }
 
 void mesh_to_vecs(TriMesh& mesh, const std::pair<OpenMesh::Vec3f, OpenMesh::Vec3f>& min_max_vert,
-	boost::shared_ptr<dVec> U, boost::shared_ptr<dVec> V, boost::shared_ptr<dVec> Z)
+	std::shared_ptr<dVec> U, std::shared_ptr<dVec> V, std::shared_ptr<dVec> Z)
 {
 	for (auto vi = mesh.vertices_begin(); vi != mesh.vertices_end(); ++vi)
 	{
@@ -137,7 +137,7 @@ void mesh_to_vecs(TriMesh& mesh, const std::pair<OpenMesh::Vec3f, OpenMesh::Vec3
 
 
 void mba_to_mesh(UCBspl::SplineSurface& interp, TriMesh& mesh,
-	boost::shared_ptr<dVec> U, boost::shared_ptr<dVec> V, int z_index)
+	std::shared_ptr<dVec> U, std::shared_ptr<dVec> V, int z_index)
 {
 	auto u = U->begin();
 	auto v = V->begin();
@@ -176,9 +176,9 @@ int main(int argc, char* argv[])
 	std::cout << "-- max: " << min_max_vert.second << std::endl;
 	
 	
-	boost::shared_ptr<dVec> u_arr(new std::vector<double>);
-	boost::shared_ptr<dVec> v_arr(new std::vector<double>);
-	boost::shared_ptr<dVec> z_arr(new std::vector<double>);
+	std::shared_ptr<dVec> u_arr(new std::vector<double>);
+	std::shared_ptr<dVec> v_arr(new std::vector<double>);
+	std::shared_ptr<dVec> z_arr(new std::vector<double>);
 
 	int z_index = 2;
 	if (xyz_order == "xzy")

@@ -6,16 +6,6 @@ project(multivariate_b-splines VERSION 0.1 LANGUAGES CXX)
 # locations on all platforms.
 include(GNUInstallDirs)
 
-# Include Boost as an imported target
-find_package(Boost REQUIRED)
-add_library(boost INTERFACE IMPORTED)
-set_property(TARGET boost PROPERTY
-    INTERFACE_INCLUDE_DIRECTORIES ${Boost_INCLUDE_DIR})
-
-# Some other library that we import that was also built using CMake
-# and has an exported target.
-#find_package(MyOtherLibrary REQUIRED)
-
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

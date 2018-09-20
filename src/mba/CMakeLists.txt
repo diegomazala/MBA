@@ -15,7 +15,6 @@ add_library(${PROJECT_NAME}
 # compiling the library, and will be added to consumers' build
 # paths.
 target_include_directories(${PROJECT_NAME} PUBLIC
-	${Boost_INCLUDE_DIRS}
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/mba>
     $<INSTALL_INTERFACE:include>
     PRIVATE src)

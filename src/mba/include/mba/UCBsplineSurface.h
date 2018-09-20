@@ -40,11 +40,9 @@
 #ifndef UCB_SPLINE_SURFACE
 #define UCB_SPLINE_SURFACE
 
-#include <boost/shared_ptr.hpp>
-
 #include <UCBtypedef.h>
 #include <GenMatrix.h>
-
+#include <memory>
 
 namespace UCBspl {
   
@@ -52,11 +50,11 @@ namespace UCBspl {
    *
    *  SplineSurface - A uniform cubic B-spline surface compatible with that
    *  produced by the SINTEF MBA library.
-   * \author Øyvind Hjelle <Oyvind.Hjelle@math.sintef.no>
+   * \author ï¿½yvind Hjelle <Oyvind.Hjelle@math.sintef.no>
    */
   class SplineSurface {
     typedef GenMatrix<UCBspl_real> GenMatrixType;
-    boost::shared_ptr<GenMatrixType> PHI_;
+    std::shared_ptr<GenMatrixType> PHI_;
 
     double umin_;
     double vmin_;
@@ -74,7 +72,7 @@ namespace UCBspl {
    /** Constructor with (standard) shared pointers to the uniform tensor product grid,
     * and the domain.
     */
-    SplineSurface(boost::shared_ptr<GenMatrixType> PHI,
+    SplineSurface(std::shared_ptr<GenMatrixType> PHI,
                   double umin, double vmin, 
                   double umax, double vmax);
     
@@ -85,7 +83,7 @@ namespace UCBspl {
 
 
     /** Initialization similar to constructor */
-    void init(boost::shared_ptr<GenMatrixType> PHI,
+    void init(std::shared_ptr<GenMatrixType> PHI,
               double umin, double vmin, 
               double umax, double vmax);
 
@@ -156,7 +154,7 @@ namespace UCBspl {
     void eval(int i, int j, double& z, double& gx, double& gy, double& gz) const;
     
     /** Get the coefficient grid of the tensor product spline surface. */
-    const boost::shared_ptr<GenMatrixType> getCoefficients() const {return PHI_;}
+    const std::shared_ptr<GenMatrixType> getCoefficients() const {return PHI_;}
     
     /** Index domain of spline coefficient matrix.
     * The surface can also be evaluated by f(i,j) and other functions with

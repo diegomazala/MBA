@@ -52,6 +52,8 @@
 #endif
 #include <iostream>
 #include <fstream>
+#include <memory>
+#include <algorithm>
 using namespace std;
 
 
@@ -63,7 +65,7 @@ MBAdata::MBAdata() {
 
 }
 
-void MBAdata::init(boost::shared_ptr<dVec> U, boost::shared_ptr<dVec> V, boost::shared_ptr<dVec> Z) {
+void MBAdata::init(std::shared_ptr<dVec> U, std::shared_ptr<dVec> V, std::shared_ptr<dVec> Z) {
 
 #ifdef MBA_DEBUG  
   if (U->size() != V->size() || Z->size() != U->size()) {
