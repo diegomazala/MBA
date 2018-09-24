@@ -137,17 +137,22 @@ void mesh_to_vecs(TriMesh& mesh, const std::pair<OpenMesh::Vec3f, OpenMesh::Vec3
 
 
 void mba_to_mesh(UCBspl::SplineSurface& interp, TriMesh& mesh,
+    const std::pair<OpenMesh::Vec3f, OpenMesh::Vec3f>& min_max_vert,
 	std::shared_ptr<dVec> U, std::shared_ptr<dVec> V, int z_index)
 {
 	auto u = U->begin();
 	auto v = V->begin();
 	for (auto vi = mesh.vertices_begin(); vi != mesh.vertices_end(); ++vi)
 	{
-		auto uv = mesh.texcoord2D(*vi);
+		//auto uv = mesh.texcoord2D(*vi);
 		auto point = mesh.point(*vi);
 		//if (point[2] > 0.5)
 			//point[z_index] = static_cast<float>(interp.f(uv[0], uv[1]));
-		point[z_index] = static_cast<float>(interp.f(*u, *v));
+		//point[z_index] = static_cast<float>(interp.f(*u, *v));
+        auto f = static_cast<float>(interp.f(point[0], point[2]));
+        if (f > 0.5)
+            point[1] = f;
+        //point[1] = static_cast<float>(interp.f(point[0], point[2]));
 		mesh.set_point(*vi, point);
 
 		u++; v++;
@@ -155,13 +160,52 @@ void mba_to_mesh(UCBspl::SplineSurface& interp, TriMesh& mesh,
 }
 
 
+void create_grid(TriMesh& mesh_out, uint32_t rows, uint32_t cols, float width = 1.0f, float height = 1.0f)
+{
+    std::vector<TriMesh::VertexHandle> vhandle((rows + 1) * (cols + 1));
+    std::vector<TriMesh::VertexHandle> fhandle(3);
+
+    for (auto i = 0; i <= rows; ++i)
+    {
+        for (auto j = 0; j <= cols; ++j)
+        {
+            auto x = static_cast<float>(j) / cols * width;
+            auto z = static_cast<float>(i) / rows * height;
+            vhandle[i*(rows+1)+j] = mesh_out.add_vertex(TriMesh::Point(x, 0.0f, z));
+            //std::cout << i*(rows+1)+j << std::endl;
+        }
+    }
+
+    rows += 1;
+    cols += 1;
+
+    for (auto i = 0; i < rows - 1; ++i)
+    {
+        for (auto j = 1; j < cols; ++j)
+        {
+
+            //std::cout << i * rows + j << ' ' << (i + 1) * rows + j - 1 << ' ' << i * rows + j - 1 << std::endl;
+            fhandle[0] = vhandle[i * rows + j];
+            fhandle[2] = vhandle[(i + 1) * rows + j - 1];
+            fhandle[1] = vhandle[i * rows + j - 1];
+            mesh_out.add_face(fhandle);
+            //std::cout << i * rows + j << ' ' << (i + 1) * rows + j << ' ' << (i + 1) * rows + j - 1 << std::endl;
+            fhandle[0] = vhandle[i * rows + j];
+            fhandle[2] = vhandle[(i + 1) * rows + j];
+            fhandle[1] = vhandle[(i + 1) * rows + j - 1];
+            mesh_out.add_face(fhandle);
+            //std::cout << std::endl;
+        }
+    }
+}
+
 int main(int argc, char* argv[])
 {
-	if (argc != 5)
+	if (argc != 6)
 	{
 		std::cout 
-			<< "Usage: app <mesh_file> < m_n > < h > < y/z > \n"
-			<< "Usage: app ../data/face.obj 5 3 z \n";
+			<< "Usage: app <mesh_file> < m_n > < h > < y/z > <mesh_grid_size>\n"
+			<< "Usage: app ../data/face.obj 5 3 z 128 \n";
 		return EXIT_FAILURE;
 	}
 	
@@ -170,6 +214,7 @@ int main(int argc, char* argv[])
 	const uint16_t n0 = m0;
 	const uint16_t h = atoi(argv[3]);
 	const char z_function = argv[4][0];
+    const uint16_t mesh_grid_size = atoi(argv[5]);
 	g_filename_out = build_output_filename(m0, n0, h);
 
 	TriMesh mesh_in;
@@ -182,7 +227,25 @@ int main(int argc, char* argv[])
 	auto min_max_vert = mesh_min_max_vert(mesh_in);
 	std::cout << "-- min: " << min_max_vert.first << std::endl;
 	std::cout << "-- max: " << min_max_vert.second << std::endl;
-	
+
+#if 0
+    std::vector<float> range = 
+    {
+        min_max_vert.second[0] - min_max_vert.first[0],
+        min_max_vert.second[1] - min_max_vert.first[1],
+        min_max_vert.second[2] - min_max_vert.first[2]
+    };
+    std::cout << "Range: " << range[0] << ' ' << range[1] << ' ' << range[2] << std::endl;
+
+    std::vector<float>::const_iterator max_elem = std::max_element(range.begin(), range.end());
+    min_max_vert.second[0] = min_max_vert.first[0] + range[0] / *max_elem * range[0];
+    min_max_vert.second[1] = min_max_vert.first[1] + range[1] / *max_elem * range[1];
+    min_max_vert.second[2] = min_max_vert.first[2] + range[2] / *max_elem * range[2];
+
+    std::cout << "-- min: " << min_max_vert.first << std::endl;
+	std::cout << "-- max: " << min_max_vert.second << std::endl;
+#endif
+    //return 0;
 	
 	std::shared_ptr<dVec> u_arr(new std::vector<double>);
 	std::shared_ptr<dVec> v_arr(new std::vector<double>);
@@ -211,8 +274,10 @@ int main(int argc, char* argv[])
 	// save_mesh_out(mesh_in);
 	// return 0;
 	
-	TriMesh mesh_out = mesh_in;
-	mba_to_mesh(interp, mesh_out, u_arr, v_arr, z_index);
+	//TriMesh mesh_out = mesh_in;
+    TriMesh mesh_out;
+    create_grid(mesh_out, mesh_grid_size, mesh_grid_size);
+	mba_to_mesh(interp, mesh_out, min_max_vert, u_arr, v_arr, z_index);
 
 
 	if (!save_mesh_out(mesh_out))
