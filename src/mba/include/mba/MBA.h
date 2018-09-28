@@ -79,7 +79,7 @@
  */
 //===========================================================================
 class MBA {
-  
+  public:
   MBAdata data_;
   int m_,n_; // the lattice is from -1,0,...,m_+1  -1,0,...,n_+1
   std::shared_ptr<GenMatrixType> PHI_;
