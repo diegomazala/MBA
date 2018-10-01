@@ -1,11 +1,11 @@
 #include <iostream>
-#include "bspline_approximation.h"
+#include "bspline_surface.h"
 #include "mesh_utils.h"
 
 
 int main(int argc, char* argv[])
 {
-    using decimal_t = float;
+    using decimal_t = double;
 
     if (argc < 2)
 	{
@@ -16,7 +16,9 @@ int main(int argc, char* argv[])
 	}
 
     const std::string filename_in = argv[1];
-    const std::string filename_out = filename_append_before_extension(filename_in, "_bsp");
+	const uint16_t m = atoi(argv[2]);
+	const uint16_t n = m;
+    const std::string filename_out = filename_append_before_extension(filename_append_before_extension(filename_in, argv[2]), "bsp");
 
 
     TriMesh mesh;
@@ -27,68 +29,13 @@ int main(int argc, char* argv[])
 	}
 
 
-    // const TriMesh::Point* ptr = mesh.points();
-    // for (auto i = 0; i < mesh.n_vertices(); ++i)
-    // {
-    //     std::cout << *ptr << std::endl;
-    //     ptr = ptr + 1;
-    // }
-    // exit(0);
-
-
-
-
-    bspline_approx<decimal_t, TriMesh::Point> bspline = { mesh.points(), mesh.n_vertices(), 1, 1 };
-    bspline.init();
-
-    std::cout << std::fixed << "Domain: " 
-        << bspline.umin << ' ' << bspline.vmin << ' ' 
-        << bspline.umax << ' ' << bspline.vmax << ' '
-        << bspline.urange_inv << ' ' << bspline.vrange_inv << std::endl;
-
-    std::cout << "offset: " << bspline.average_z << std::endl;
-
-    exit(0);
-
-    bspline.compute();
-    
-
-    std::cout << std::fixed << "delta\n";
-    for (const auto& v1 : bspline.delta)
-    {
-        for (const auto& v2 : v1)
-        {
-            std::cout << v2 << ' ';
-        }
-        std::cout << std::endl;
-    }
-    std::cout << "omega\n";
-    for (const auto& v1 : bspline.omega)
-    {
-        for (const auto& v2 : v1)
-        {
-            std::cout << v2 << ' ';
-        }
-        std::cout << std::endl;
-    }
-    std::cout << "phi\n";
-    for (const auto& v1 : bspline.phi)
-    {
-        for (const auto& v2 : v1)
-        {
-            std::cout << v2 << ' ';
-        }
-        std::cout << std::endl;
-    }
-
-    exit(0);
-
+    bspline::surface<decimal_t, TriMesh::Point> surf = { mesh.points(), mesh.n_vertices(), m, n };
 
     for (auto vi = mesh.vertices_begin(); vi != mesh.vertices_end(); ++vi)
     {
         auto point = mesh.point(*vi);
-
-        point[2] = bspline.eval(point[0], point[1]);
+		auto f = surf(point[0], point[1]);
+		point[2] = f;
 
         mesh.set_point(*vi, point);
     }
@@ -101,3 +48,4 @@ int main(int argc, char* argv[])
 
     return EXIT_SUCCESS;
 }
+

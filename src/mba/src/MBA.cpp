@@ -525,6 +525,7 @@ void MBA::BAalg()
         double s, t;
         UCBspl::ijst(m_, n_, uc, vc, i, j, s, t);
 
+
         // compute w_kl's and SumSum w_ab^2 here:
         double w_kl[4][4];
         int k, l;
@@ -532,7 +533,6 @@ void MBA::BAalg()
         UCBspl::WKLandSum2(s, t, w_kl, sum_w_ab2_inv);
 
         sum_w_ab2_inv = double(1) / sum_w_ab2_inv;
-
 
         double zc = data_.Z()[ip];
 
@@ -548,6 +548,7 @@ void MBA::BAalg()
                 // 1. Originally
                 double phi_kl = tmp * zc * sum_w_ab2_inv;
 
+				
                 
                 // 2. Alternatively, to let it tapper of more smoothly (but more
                 // efficient if permantly)
@@ -563,20 +564,12 @@ void MBA::BAalg()
 
                 tmp *= tmp;
 
+
                 delta_(i + k, j + l) += tmp * phi_kl;
                 omega_(i + k, j + l) += tmp;
             }
         }
     }
-
-    std::cout << std::fixed << "\ndelta\n";
-    delta_.print();
-    std::cout << std::fixed << "\nomega\n";
-    omega_.print();
-    std::cout << std::fixed << "\nphi\n";
-    PHI_->print();
-  
-    exit(0);
 
     int noCU, noCV; // no. of coeffs in each component
 #ifdef UNIFORM_CUBIC_C1_SPLINES
@@ -587,6 +580,7 @@ void MBA::BAalg()
     noCV = n_ + 3;
 #endif
 
+	
     for (int i = -1; i <= noCU - 2; i++)
     {
         for (int j = -1; j <= noCV - 2; j++)
@@ -603,7 +597,6 @@ void MBA::BAalg()
             }
         }
     }
-
 }
 
 //===========================================================================
@@ -624,7 +617,7 @@ void MBA::MBAalg(int m0, int n0, int h, int num_smoothing)
     n_ = n0;
 
     std::cout << "-- [m, n] = " << m_ << ' ' << n_ << std::endl;
-exit(0);
+
     if (PHI_.get() == NULL)
         PHI_.reset(new GenMatrix<UCBspl_real>);
 
@@ -859,3 +852,4 @@ UCBspl_real extrapolate_point(int i, int j, const GenMatrixType &matrix)
 }
 
 }; // end anonymous namespace
+

@@ -57,12 +57,12 @@ void mesh_to_vecs(TriMesh& mesh, const std::pair<OpenMesh::Vec3f, OpenMesh::Vec3
 		//uv[0] = ndc(point[0], min_max_vert.first[0], min_max_vert.second[0]);
 		//uv[1] = ndc(point[1], min_max_vert.first[1], min_max_vert.second[1]);
 
-		point[0] = ndc(point[0], min_max_vert.first[0], min_max_vert.second[0]);
-		point[1] = ndc(point[1], min_max_vert.first[1], min_max_vert.second[1]);
-		point[2] = ndc(point[2], min_max_vert.first[2], min_max_vert.second[2]);
+		//point[0] = ndc(point[0], min_max_vert.first[0], min_max_vert.second[0]);
+		//point[1] = ndc(point[1], min_max_vert.first[1], min_max_vert.second[1]);
+		//point[2] = ndc(point[2], min_max_vert.first[2], min_max_vert.second[2]);
 
 		//mesh.set_texcoord2D(*vi, uv);
-		mesh.set_point(*vi, point);
+		//mesh.set_point(*vi, point);
 	
 		//if (point[2] > 0.5)
 		{
@@ -99,8 +99,11 @@ void mba_to_mesh(UCBspl::SplineSurface& interp, TriMesh& mesh,
 		//point[z_index] = static_cast<float>(interp.f(*u, *v));
         //auto f = static_cast<float>(interp.f(point[0], point[1]));
         auto f = static_cast<float>(interp.f(point[0], point[1]));
+		//std::cout << point << ' ' << f << std::endl;
         //if (point[2] > 0.5)
             point[2] = f;
+
+
         
         // point[0] = min_max_vert.first[0] + point[0] * range[0];
         // point[1] = min_max_vert.first[1] + point[1] * range[1];
@@ -179,21 +182,16 @@ int main(int argc, char* argv[])
         //mesh_to_vecs(mesh_in, u_arr, v_arr, z_arr);
 	}
 
+
 	// Algorithm setup.
 	MBA mba(u_arr, v_arr, z_arr);
 	mba.MBAalg(m0, n0, h);
+
+	//mba.PHI_->print();
+	//exit(0);
+
 	UCBspl::SplineSurface interp = mba.getSplineSurface();
 
-    std::cout << std::fixed << "\ndelta\n";
-    mba.delta_.print();
-    std::cout << std::fixed << "\nomega\n";
-    mba.omega_.print();
-    std::cout << std::fixed << "\nphi\n";
-    mba.PHI_->print();
-  
-    exit(0);
-
-	
 	TriMesh mesh_out = mesh_in;
     //TriMesh mesh_out;
     //create_grid_mesh(mesh_out, mesh_grid_size, mesh_grid_size, up);

@@ -42,7 +42,7 @@ struct MeshTraits : OpenMesh::DefaultTraits
     FaceAttributes(0);
 };
 
-using TriMesh = OpenMesh::TriMesh_ArrayKernelT<MeshTraits<float>>;
+using TriMesh = OpenMesh::TriMesh_ArrayKernelT<MeshTraits<double>>;
 OpenMesh::VPropHandleT<TriMesh::Normal> Normals;
 OpenMesh::VPropHandleT<TriMesh::TexCoord2D> TexCoord;
 

@@ -108,16 +108,15 @@ static double average(const std::vector<double>& vec) {
   int no = vec.size();
   double sum = 0.0;
   for (int ip = 0; ip < no; ip++)
-     sum += vec[ip];
+	  sum += vec[ip];
 
-
-    std::cout << no << " sum " << sum << std::endl;
   return sum/(double)no;
 }
 
 
 void MBAdata::buildBaseSurface() {
-  if (baseType_ == MBA_CONSTLS) {
+  if (baseType_ == MBA_CONSTLS) 
+  {
     offset_ = average(Z_);
 #ifdef MBA_DEBUG
     cout << "averageZ = " << offset_ << endl;
@@ -127,7 +126,7 @@ void MBAdata::buildBaseSurface() {
   else if (baseType_ == MBA_CONSTVAL) {
     buildOffset();
   }
-  std::cout << "offset_ " << offset_ << std::endl;
+  
 }
 
 void MBAdata::readScatteredData(const char filename[]) {

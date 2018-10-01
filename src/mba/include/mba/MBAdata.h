@@ -122,8 +122,9 @@ class MBAdata
     ~MBAdata() {}
 
     /// Initialize with scattered data
-    void init(std::shared_ptr<dVec> U, std::shared_ptr<dVec> V,
-              std::shared_ptr<dVec> Z);
+    void init(std::shared_ptr<dVec> U, 
+			std::shared_ptr<dVec> V,
+            std::shared_ptr<dVec> Z);
 
     /// min u-value of the actual data domain
     const double &umin() const { return umin_; }

@@ -102,9 +102,13 @@ double SplineSurface::f(double u, double v) const { // original domain
   double uc = (u - umin_)/(umax_-umin_) * (double)m_;
   double vc = (v - vmin_)/(vmax_-vmin_) * (double)n_;
   
+  //std::cout << std::fixed << m_ << ' ' << n_ << ' ' << uc << ' ' << vc << std::endl;
+
   int i, j;
   double s, t;
   UCBspl::ijst(m_, n_, uc, vc, i, j, s, t);
+
+  //std::cout << std::fixed << i << ' ' << j << ' ' << s << ' ' << t << std::endl;
 
   double Bks[4];
   double Blt[4];
@@ -522,3 +526,4 @@ bool SplineSurface::restrictCoeffs() {
 
   return true;
 }    
+
