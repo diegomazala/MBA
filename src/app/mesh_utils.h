@@ -227,3 +227,26 @@ static void mesh_to_vecs(TriMesh &mesh, std::shared_ptr<std::vector<decimal>> U,
         }
     }
 }
+
+
+template <typename scalar_t>
+void mesh_to_vecs(const TriMesh& mesh, std::vector<scalar_t>& x, std::vector<scalar_t>& y, std::vector<scalar_t>& z)
+{
+    if (x.size() != mesh.n_vertices())
+        x.resize(mesh.n_vertices());
+
+    if (y.size() != mesh.n_vertices())
+        y.resize(mesh.n_vertices());
+
+    if (z.size() != mesh.n_vertices())
+        z.resize(mesh.n_vertices());
+
+    size_t i = 0;
+	for (auto vi = mesh.vertices_begin(); vi != mesh.vertices_end(); ++vi, ++i)
+	{
+		const auto& point = mesh.point(*vi);
+        x[i] = point[0];
+        y[i] = point[1];
+        z[i] = point[2];
+	}
+}
