@@ -34,6 +34,8 @@ int main(int argc, char* argv[])
     mesh_to_vecs(mesh, x, y, z);
 
     surface::bspline_t<decimal_t> surf = { x.data(), y.data(), z.data(), mesh.n_vertices(), m, n };
+    surf.compute();
+    std::cout << "Error: " << surf.compute_error() << std::endl;
     
     decimal_t sum_error = 0;
     for (auto vi = mesh.vertices_begin(); vi != mesh.vertices_end(); ++vi)

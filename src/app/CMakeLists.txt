@@ -51,6 +51,24 @@ else()
 endif()
 
 
+
+project(mesh_uvz2xyz VERSION 0.1 LANGUAGES CXX)
+
+# Define an executable
+add_executable(${PROJECT_NAME} mesh_uvz2xyz.cpp)
+
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 17)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
+
+target_include_directories (${PROJECT_NAME} PRIVATE ${OPENMESH_INCLUDE_DIRS})
+
+# Define the libraries this project depends upon
+target_link_libraries(${PROJECT_NAME} ${OPENMESH_LIBRARIES})
+
+
+
+
+
 #[[
 find_package(Eigen3)
 

@@ -123,14 +123,16 @@ class bspline_t
         {
             for (uint32_t j = 0; j < n + 3; ++j)
             {
+                // avoiding division by zero
                 if (!logically_equal(omega[i][j], static_cast<decimal_t>(0)))
                 {
+                    // eq(5)
+
                     // this is the original from paper
                     // this->phi[i][j] = delta[i][j] / omega[i][j];
-
+                    
                     // here we remove the offset inserted in the begining of the algorithm
                     this->phi[i][j] = delta[i][j] / omega[i][j] + this->average_z;
-                    //(*this->phi)[i][j] = delta[i][j] / omega[i][j] + this->average_z;
                 }
                 else
                 {
@@ -139,7 +141,6 @@ class bspline_t
 
                     // here we remove the offset inserted in the begining of the algorithm
                     this->phi[i][j] = average_z;
-                    //(*this->phi)[i][j] = average_z;
                 }
             }
         }
@@ -210,7 +211,7 @@ class bspline_t
 
     const decimal_t get_phi(size_t i, size_t j) const { return this->phi[i][j]; }
 
-    auto& get_phi_matrix() {return this->phi;}
+    const auto& get_phi_matrix() const {return this->phi;}
 
   //protected:
     //

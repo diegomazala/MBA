@@ -34,7 +34,7 @@ class multilevel_bspline
         auto lm = this->m;
         auto ln = this->n;
 
-        for (auto k = 0; k <= this->h; ++k)
+        for (uint32_t k = 0; k <= this->h; ++k)
         {
             surfaces.push_back(
                 bspline_surface_t(
@@ -86,7 +86,10 @@ class multilevel_bspline
         return val;
     }
 
-    
+    const std::vector<bspline_surface_t>& get_surfaces() const
+    {
+        return this->surfaces;
+    }
 
   protected:
 

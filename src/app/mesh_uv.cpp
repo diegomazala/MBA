@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 
 	string input_path = argv[1];
 	size_t index = input_path.find_last_of('.');
-	string output_path = input_path.insert(index, "_output");
+	string output_path = input_path.insert(index, "_uvz");
 
 	OpenMesh::IO::Options OptionRead(OpenMesh::IO::Options::VertexTexCoord);
 	OpenMesh::IO::Options OptionWrite(OpenMesh::IO::Options::VertexTexCoord);// | OpenMesh::IO::Options::VertexNormal);
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 		auto point = mesh.point(*vi);
 		point[0] = uv[0];
 		point[1] = uv[1];
-		point[2] = 0.0f;
+		//point[2] = 0.0f;
 		mesh.set_point(*vi, point);
 	}
 
