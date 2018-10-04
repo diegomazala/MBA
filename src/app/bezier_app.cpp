@@ -9,8 +9,6 @@ int main(int arc, char* argv[])
     std::cout << "quadratic: "<< curve::bezier::quadratic<float>(atof(argv[1]), coords) << std::endl;
     std::cout << "cubic    : "<< curve::bezier::cubic<float>(atof(argv[1]), coords) << std::endl;
 
-
-
     float p[16] = 
     {
         0.0f, 0.33f, 0.66f, 1.0f,
@@ -22,9 +20,7 @@ int main(int arc, char* argv[])
     float px[4] = {0.0f, 0.33f, 0.66f, 1.0f};
     float py[4] = {0.0f, 0.33f, 0.66f, 1.0f};
 
-    //std::cout << std::fixed << "\n\nBezier Surface Interpol: " << surface::bezier::cubic<float>(atof(argv[1]), atof(argv[2]), p) << std::endl;
-
-    std::cout << std::fixed << "\nBezier Surface Interpol: " << surface::bezier::cubic2<float>(atof(argv[1]), atof(argv[2]), px, py) << std::endl << std::endl;
+    std::cout << std::fixed << "\nBezier Surface Interpol: " << surface::bezier::cubic<float>(atof(argv[1]), atof(argv[2]), px, py) << std::endl << std::endl;
 
     return 0;
 }
