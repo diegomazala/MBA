@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "bspline_surface.h"
 #include "mesh_utils.h"
 
@@ -32,18 +33,78 @@ int main(int argc, char* argv[])
     std::vector<decimal_t> y(mesh.n_vertices(), 0);
     std::vector<decimal_t> z(mesh.n_vertices(), 0);
     mesh_to_vecs(mesh, x, y, z);
+    //mesh_uv_to_vecs(mesh, x, y, z);
 
     surface::bspline_t<decimal_t> surf = { x.data(), y.data(), z.data(), mesh.n_vertices(), m, n };
     surf.compute();
     std::cout << "Error: " << surf.compute_error() << std::endl;
-    
-    decimal_t sum_error = 0;
-    for (auto vi = mesh.vertices_begin(); vi != mesh.vertices_end(); ++vi)
+
+
+#if 0
+    for (auto vi = mesh.vertices_begin(); vi != mesh.vertices_end(); ++vi, index++)
     {
+        const auto& uv = mesh.texcoord2D(*vi);
         auto point = mesh.point(*vi);
-		point[2] = surf(point[0], point[1]);
+        //point[2] = surf(uv[0], uv[1]);
+        point[2] = surf(point[0], point[1]);
         mesh.set_point(*vi, point);
     }
+#else
+    for (auto index = 0; index < mesh.n_vertices(); ++index)
+    {
+        // if (index % 16 == 0)
+        //     std::cout << std::endl;
+
+        TriMesh::VertexHandle vi = mesh.vertex_handle(index);
+        //auto uv = mesh.texcoord2D(vi);
+        auto point = mesh.point(vi);
+        point[2] = surf(point[0], point[1]);
+
+        // compute 4 neighbors
+        // xyz_uv[4]
+        
+        //std::cout << index << '\t' << std::fixed << point[0] << ' ' << point[1] << '\t' << x << ' ' << y << std::endl;
+
+        mesh.set_point(vi, point);
+    }
+
+    // for (uint32_t i = 0; i < m + 3; ++i )
+    // {
+    //     for (uint32_t j = 0; j < n + 3; ++j )
+    //     {
+    //         auto& pt = surf.xyzuv[i][j];
+    //         std::cout << std::fixed 
+    //         << '[' << pt.x << ' ' << pt.y << ' ' 
+    //         << surf(pt.x, pt.y)
+    //         //<< pt.z 
+    //         //<< "]\t[" << pt.u << ' ' << pt.v 
+    //         //<< "]\t[" << pt.s << ' ' << pt.t 
+    //         << "]\n";
+    //     }
+    //     std::cout << std::endl;
+    // }
+
+    // {
+    //     std::ofstream out(filename_out, std::ios::out);
+    //     for (uint32_t i = 0; i < m + 3; ++i )
+    //     {
+    //         for (uint32_t j = 0; j < n + 3; ++j )
+    //         {
+    //             auto& pt = surf.xyzuv[i][j];
+    //             out << std::fixed 
+    //             << "v "
+    //             << pt.s << ' ' << pt.t << ' ' 
+    //             //<< surf(pt.x, pt.y)
+    //             << '0' 
+    //             //<< "]\t[" << pt.u << ' ' << pt.v 
+    //             //<< "]\t[" << pt.s << ' ' << pt.t 
+    //             << '\n';
+    //         }
+    //         //std::cout << std::endl;
+    //     }
+    // }
+
+#endif
 
 
     if (!save_mesh(mesh, filename_out))

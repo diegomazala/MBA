@@ -119,6 +119,22 @@ target_link_libraries(${PROJECT_NAME} ${OPENMESH_LIBRARIES})
 
 
 
+find_package(Eigen3)
+project(bezier_app VERSION 0.1 LANGUAGES CXX)
+
+# Define an executable
+add_executable(${PROJECT_NAME} bezier_app.cpp bezier.h)
+
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 17)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
+
+target_include_directories (${PROJECT_NAME} PRIVATE ${EIGEN3_INCLUDE_DIR})
+
+# Define the libraries this project depends upon
+#target_link_libraries(${PROJECT_NAME} ${OPENMESH_LIBRARIES})
+
+
+
 
 
 

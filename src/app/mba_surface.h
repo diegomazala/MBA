@@ -67,24 +67,13 @@ class multilevel_bspline
     //
     // Overload operator () to evaluate the function at (u, v)
     //
-    decimal_t operator()(decimal_t u, decimal_t v) const { return eval(u, v); }
-
+    decimal_t operator()(decimal_t u, decimal_t v) const { return eval(u, v, h + 1); }
 
     //
-    // Evaluate the function at (u, v)
+    // Overload operator () to evaluate the function at (u, v) nad level k
     //
-    decimal_t eval(decimal_t u, decimal_t v) const
-    {
-        //
-        // Evaluate the function in all levels
-        //
-        decimal_t val = 0;
-        for (const auto &surf : surfaces)
-        {
-            val += surf(u, v);
-        }
-        return val;
-    }
+    decimal_t operator()(decimal_t u, decimal_t v, uint32_t k) const { return eval(u, v, k); }
+
 
     const std::vector<bspline_surface_t>& get_surfaces() const
     {
@@ -92,6 +81,22 @@ class multilevel_bspline
     }
 
   protected:
+
+    //
+    // Evaluate the function at (u, v)
+    //
+    decimal_t eval(decimal_t u, decimal_t v, uint32_t k) const
+    {
+        //
+        // Evaluate the function in all levels
+        //
+        decimal_t val = 0;
+        for (auto i = 0; i< k; ++i)
+        {
+            val += surfaces[i](u, v);
+        }
+        return val;
+    }
 
     //
     // Attributes

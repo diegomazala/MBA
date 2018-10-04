@@ -23,6 +23,49 @@ static std::function<decimal_t(decimal_t)> B[4] = {
     [](decimal_t t) { return std::pow(t, 3) / 6; }};
 
 //
+// B-splines first derivative functions
+//
+template <typename decimal_t>
+static std::function<decimal_t(decimal_t)> dB[4] = {
+    [](decimal_t t) { return 0.5 * (1 - t) * (t - 1); },
+    [](decimal_t t) { return 1.5 * t * t - 2 * t;   },
+    [](decimal_t t) { return -(1.5 * t * t) + t + 0.5; },
+    [](decimal_t t) { return t * t / 2.0; } };
+
+//
+// B-splines second derivative functions
+//
+template <typename decimal_t>
+static std::function<decimal_t(decimal_t)> ddB[4] = {
+    [](decimal_t t) { return -t + 1; },
+    [](decimal_t t) { return 3 * t - 2;   },
+    [](decimal_t t) { return -3 * t + 1; },
+    [](decimal_t t) { return t; } };    
+
+// Pre-evaluated tensors equivalent to B(k,s)*B(l,t)
+template <typename decimal_t>
+static decimal_t tensor_BB[3][3] = 
+                {{1. / 36., 1. / 9., 1. / 36.},
+                {1. / 9., 4. / 9., 1. / 9.},
+                {1. / 36., 1. / 9., 1. / 36.}};
+
+// Pre-evaluated tensor products of B-splines, in a grid index
+// Mixed derivative an positional tensor for the x-component.
+// equivalent to dB(k,s)*B(l,t).
+// (The second row with zeros is not used in evaluations.)
+template <typename decimal_t>
+static decimal_t tensor_dBB[3][3] = {{-1. / 12., -1. / 3., -1. / 12.},
+                                  {0., 0., 0.},
+                                  {1. / 12., 1. / 3., 1. / 12.}};
+
+// The transpose of the matrix above, for the y-components,
+// equivalent to B(k,s)*dB(l,t)
+template <typename decimal_t>
+static decimal_t tensor_BdB[3][3] = {{-1. / 12., 0., 1. / 12.},
+                                  {-1. / 3., 0., 1. / 3.},
+                                  {-1. / 12., 0., 1. / 12.}};
+
+//
 // Function to test doubles and floats considering decimals
 //
 template <typename T>
@@ -40,6 +83,16 @@ class bspline_t
   public:
     using matrix_t = std::vector<std::vector<decimal_t>>;
     using matrix4_t = std::array<std::array<decimal_t, 4>, 4>;
+
+    struct xyzuv_t 
+    { 
+        decimal_t x, y, z, u, v, s, t; 
+        xyzuv_t()
+        {
+            x = y = z = u = v = s = t = std::numeric_limits<decimal_t>::max();
+        }
+    };
+    using matrix_xyzuv_t = std::vector<std::vector<xyzuv_t>>;
 
     bspline_t() = default;
     virtual ~bspline_t() = default;
@@ -68,8 +121,23 @@ class bspline_t
         matrix_t omega = {(m + 3), std::vector<decimal_t>(n + 3, 0)};
         this->phi = {(m + 3), std::vector<decimal_t>(n + 3, 0)};
 
+        this->xyzuv = {(m + 3), std::vector<xyzuv_t>(n + 3)};
+        
         const decimal_t interval_normalization_factor_u = m * urange_inv;
         const decimal_t interval_normalization_factor_v = n * vrange_inv;
+
+        const decimal_t cell_x = static_cast<decimal_t>(1) / (m + 3 - 1);
+        const decimal_t cell_y = static_cast<decimal_t>(1) / (n + 3 - 1); 
+
+        for (uint32_t i = 0; i < m + 3; ++i)
+        {
+            for (uint32_t j = 0; j < n + 3; ++j)
+            {
+                xyzuv[i][j].u = static_cast<decimal_t>(i) * cell_x;
+                xyzuv[i][j].v = static_cast<decimal_t>(j) * cell_y;
+            }
+        }
+
 
         for (size_t index = 0; index < point_count; ++index)
         {
@@ -89,8 +157,115 @@ class bspline_t
             // Compute [i,j] indices and [s,t] params
             //
             auto [i, j, s, t] = compute_ijst(u, v);
-            i += 1; // +1 to go for positive indices
-            j += 1;
+
+            //std::cout << std::fixed << "[" << u << ' ' << v << "] : " << s << ' ' << t << '\n';
+            //std::cout << std::fixed << "[" << i << ' ' << j << "] : " << s << ' ' << t << '\n';
+            //std::cout << std::abs(u - s) + std::abs(v - t)  << std::endl;
+
+            {
+                int ii_0 = static_cast<int>(s / cell_x); 
+                int ii_1 = ii_0 + 1; 
+                auto uv_x = s / cell_x; 
+                auto left = std::floor(uv_x) * cell_x;
+                auto right = left + cell_x;
+                if (right > 1)
+                {
+                    right = 1;
+                    left = right - cell_x;
+                    ii_0--;
+                    ii_1--;
+                }
+
+                int jj_0 = static_cast<int>(t / cell_y); 
+                int jj_1 = jj_0 + 1; 
+                auto uv_y = t / cell_y;
+                auto bottom = std::floor(uv_y) * cell_y;
+                auto top = bottom + cell_y;
+                if (top > 1)
+                {
+                    top = 1;
+                    bottom = top - cell_y;
+                    jj_0--;
+                    jj_1--;
+                }
+
+                //std::cout << std::fixed << "[" << s << ' ' << t << "] : "  << left << ' ' << right << ' ' << bottom << ' ' << top << '\n';
+                //std::cout << std::fixed << "[" << s << ' ' << t << "] : "  << ii_0 << ' ' << ii_1 << ' ' << jj_0 << ' ' << jj_1 << '\n';
+                //std::cout << std::fixed << "[" << uv_i << ' ' << uv_j << "] : "  << top << ' ' << bottom << '\n';
+
+                // update from distance for 4 neighbours
+                {
+                    {
+                        // left bottom
+                        auto& pt = xyzuv[ii_0][jj_0];
+
+                        auto dist_stuv = std::sqrt(std::pow(s - pt.u, 2) + std::pow(t - pt.v, 2));
+                        auto dist_stst = std::sqrt(std::pow(s - pt.s, 2) + std::pow(t - pt.t, 2));
+
+                        if (dist_stuv < dist_stst)
+                        {
+                            pt.x = x;
+                            pt.y = y;
+                            pt.z = z + average_z;
+                            pt.s = s;
+                            pt.t = t;
+                        }
+                    }
+
+                    {
+                        // left top
+                        auto& pt = xyzuv[ii_0][jj_1];
+
+                        auto dist_stuv = std::sqrt(std::pow(s - pt.u, 2) + std::pow(t - pt.v, 2));
+                        auto dist_stst = std::sqrt(std::pow(s - pt.s, 2) + std::pow(t - pt.t, 2));
+
+                        if (dist_stuv < dist_stst)
+                        {
+                            pt.x = x;
+                            pt.y = y;
+                            pt.z = z + average_z;
+                            pt.s = s;
+                            pt.t = t;
+                        }
+                    }
+
+                    {
+                        // right bottom
+                        auto& pt = xyzuv[ii_1][jj_0];
+
+                        auto dist_stuv = std::sqrt(std::pow(s - pt.u, 2) + std::pow(t - pt.v, 2));
+                        auto dist_stst = std::sqrt(std::pow(s - pt.s, 2) + std::pow(t - pt.t, 2));
+
+                        if (dist_stuv < dist_stst)
+                        {
+                            pt.x = x;
+                            pt.y = y;
+                            pt.z = z + average_z;
+                            pt.s = s;
+                            pt.t = t;
+                        }
+                    }
+
+                    {
+                        // right top
+                        auto& pt = xyzuv[ii_1][jj_1];
+
+                        auto dist_stuv = std::sqrt(std::pow(s - pt.u, 2) + std::pow(t - pt.v, 2));
+                        auto dist_stst = std::sqrt(std::pow(s - pt.s, 2) + std::pow(t - pt.t, 2));
+
+                        if (dist_stuv < dist_stst)
+                        {
+                            pt.x = x;
+                            pt.y = y;
+                            pt.z = z + average_z;
+                            pt.s = s;
+                            pt.t = t;
+                        }
+                    }
+                }
+    
+                
+            }
 
             //
             // Compute w_kl's and sum_sum w²_ab
@@ -115,6 +290,8 @@ class bspline_t
                 }
             }
         }
+
+        
 
         //
         // Compute phi matrix [m+3,n+3]
@@ -144,45 +321,54 @@ class bspline_t
                 }
             }
         }
-    }
 
-    //
-    // Evaluate the function at (u, v)
-    //
-    decimal_t eval(decimal_t u, decimal_t v) const
-    {
-        // Map to the half open domain Omega = [0,m) x [0,n)
-        u = (u - umin) * urange_inv * m;
-        v = (v - vmin) * vrange_inv * n;
-
-        //
-        // Compute [i,j] indices and [s,t] params
-        //
-        auto [i, j, s, t] = compute_ijst(u, v);
-
-        i += 1; // +1 to go for positive indices
-        j += 1;
-
-        //
-        // Evaluate the function
-        //
-        decimal_t val = 0;
-        for (auto k = 0; k < 4; ++k)
+#if 0
+        std::cout << std::fixed << "delta \n";
+        for (const auto& v1 : delta)
         {
-            for (auto l = 0; l < 4; ++l)
+            for (const auto& v2 : v1)
             {
-                val +=
-                    this->phi[i + k][j + l] * B<decimal_t>[k](s) * B<decimal_t>[l](t);
-                    //(*this->phi)[i + k][j + l] * B<decimal_t>[k](s) * B<decimal_t>[l](t);
+                std::cout << v2 << ' ';
             }
+            std::cout << std::endl;
         }
-        return val;
+
+        std::cout << "omega \n";
+        for (const auto& v1 : omega)
+        {
+            for (const auto& v2 : v1)
+            {
+                std::cout << v2 << ' ';
+            }
+            std::cout << std::endl;
+        }
+
+        std::cout << "phi \n";
+        for (const auto& v1 : phi)
+        {
+            for (const auto& v2 : v1)
+            {
+                std::cout << v2 << ' ';
+            }
+            std::cout << std::endl;
+        }
+#endif        
     }
 
+    
     //
     // Overload operator () to evaluate the function at (u, v)
+    // (u, v) must be inside of the domain
     //
     decimal_t operator()(decimal_t u, decimal_t v) const { return eval(u, v); }
+
+    //
+    // Overload operator () to evaluate the function at (i, j) position.
+    // (i, j) is a index in the spline coefficient matrix
+    // (i, j) must be inside of the domain
+    // 0 <= i <= m and  0 <= j <= n, where m_ and n_ are retrieved by
+    //
+    //decimal_t operator()(uint32_t i, uint32_t j) const { return eval(i, j); }
 
     //
     // Compute the difference between the original z and
@@ -214,6 +400,95 @@ class bspline_t
     const auto& get_phi_matrix() const {return this->phi;}
 
   //protected:
+
+    //
+    // Evaluate the function at (u, v)
+    //
+    decimal_t eval(decimal_t u, decimal_t v) const
+    {
+        // Map to the half open domain Omega = [0,m) x [0,n)
+        u = (u - umin) * urange_inv * m;
+        v = (v - vmin) * vrange_inv * n;
+
+        //
+        // Compute [i,j] indices and [s,t] params
+        //
+        auto [i, j, s, t] = compute_ijst(u, v);
+
+
+        //std::cout << std::fixed << "[" << u << ' ' << v << "] : " << s << ' ' << t << '\n';
+        //
+        // Evaluate the function
+        //
+        decimal_t val = 0;
+        for (auto k = 0; k < 4; ++k)
+        {
+            for (auto l = 0; l < 4; ++l)
+            {
+                val +=
+                    this->phi[i + k][j + l] * B<decimal_t>[k](s) * B<decimal_t>[l](t);
+                    //(*this->phi)[i + k][j + l] * B<decimal_t>[k](s) * B<decimal_t>[l](t);
+            }
+        }
+        return val;
+    }
+
+    // //
+    // // Evaluate the function at (u, v)
+    // //
+    // decimal_t eval(uint32_t i, uint32_t j) const
+    // {
+    //     //i = i - 1;
+    //     //j = j - 1;
+    //     int m_size = 3;
+
+    //     decimal_t val = 0.0;
+    //     // Only over 3x3 coefficients in the C2 case and 2x2 in the C1 case
+    //     for (auto k = 0; k < m_size; k++) 
+    //     {
+    //         for (auto l = 0; l < m_size; l++) 
+    //         {
+    //             //val += this->phi[i + k][j + l] * tensor_BB<decimal_t>[k][l];
+    //             val += this->phi[i + k][j + l];
+    //         }
+    //     }
+
+    //     return val;
+    // }
+
+    std::tuple<decimal_t, decimal_t> derivative(decimal_t u, decimal_t v)
+    {
+        // Map to the half open domain Omega = [0,m) x [0,n)
+        u = (u - umin) * urange_inv * m;
+        v = (v - vmin) * vrange_inv * n;
+
+        //
+        // Compute [i,j] indices and [s,t] params
+        //
+        auto [i, j, s, t] = compute_ijst(u, v);
+
+        //
+        // Evaluate the function
+        //
+        decimal_t valx = 0;
+        decimal_t valy = 0;
+        for (auto k = 0; k < 4; ++k)
+        {
+            for (auto l = 0; l < 4; ++l)
+            {
+                valx += this->phi[i + k][j + l] * dB<decimal_t>[k](s) * B<decimal_t>[l](t);
+                valy += this->phi[i + k][j + l] * B<decimal_t>[k](s) * dB<decimal_t>[l](t);
+            }
+        }
+
+        // find cross product and normalize
+        // (-df/du, -df/dv, 1)
+        valx *= ((decimal_t)m / (umax - umin));
+        valy *= ((decimal_t)n / (vmax - vmin));
+
+        return {valx, valy};
+    }
+
     //
     // Compute [i,j] indices and [s,t] params
     //
@@ -226,7 +501,6 @@ class bspline_t
         decimal_t s = x - floor[0];
         decimal_t t = y - floor[1];
 
-        // test if with uv bigger (0.1), this is still needed
         if (i == m - 1)
         {
             i--;
@@ -237,6 +511,11 @@ class bspline_t
             j--;
             t = 1;
         }
+
+        // in the paper, the range goes from [-1, m + 1]
+        // here, we use [0, m + 2]
+        i += 1; // +1 to go for positive indices
+        j += 1;
 
         return {i, j, s, t};
     }
@@ -313,6 +592,8 @@ class bspline_t
     matrix_t phi;
     decimal_t umin, vmin, umax, vmax, urange_inv, vrange_inv, average_z;
     std::vector<decimal_t> delta_z;
+
+    matrix_xyzuv_t xyzuv;
 };
 
 } // namespace surface

@@ -196,9 +196,18 @@ int main(int argc, char* argv[])
     //TriMesh mesh_out;
     //create_grid_mesh(mesh_out, mesh_grid_size, mesh_grid_size, up);
     //std::cout << "create_grid_mesh\n" << std::endl;
-	mba_to_mesh(interp, mesh_out, min_max_vert, u_arr, v_arr, z_index);
-    //mba_to_mesh(interp, mesh_out, z_index);
+	//mba_to_mesh(interp, mesh_out, min_max_vert, u_arr, v_arr, z_index);
+    mba_to_mesh(interp, mesh_out, z_index);
 
+
+    for (auto i = 0; i < m0 + 3; ++i )
+    {
+        for (auto j = 0; j < n0 + 3; ++j )
+        {
+            std::cout << interp.f(i, j) << ' ';
+        }
+        std::cout << std::endl;
+    }
 
 	if (!save_mesh(mesh_out, g_filename_out))
 	{

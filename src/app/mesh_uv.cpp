@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 	string output_path = input_path.insert(index, "_uvz");
 
 	OpenMesh::IO::Options OptionRead(OpenMesh::IO::Options::VertexTexCoord);
-	OpenMesh::IO::Options OptionWrite(OpenMesh::IO::Options::VertexTexCoord);// | OpenMesh::IO::Options::VertexNormal);
+	OpenMesh::IO::Options OptionWrite(OpenMesh::IO::Options::VertexTexCoord);
 	
 	mesh mesh;
 	mesh.request_vertex_texcoords2D();
