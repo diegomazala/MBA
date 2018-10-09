@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-
+#include <fstream>
 #include <algorithm>
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
@@ -177,8 +177,9 @@ static void create_grid_mesh(TriMesh &mesh, uint32_t rows, uint32_t cols,
         for (auto j = 0; j <= cols; ++j)
         {
             auto x = static_cast<float>(j) / cols * width;
-            auto z = static_cast<float>(i) / rows * height;
-            vhandle[i * (rows + 1) + j] = mesh.add_vertex(TriMesh::Point(x, 0.0f, z));
+            auto y = static_cast<float>(i) / rows * height;
+            vhandle[j * (rows + 1) + i] = mesh.add_vertex(TriMesh::Point(x, y, 0));
+            
             // vhandle[i*(rows+1)+j] = mesh.add_vertex(TriMesh::Point(x, z * up[2], z
             // * up[1]));
             // std::cout << i*(rows+1)+j << std::endl;
@@ -207,6 +208,14 @@ static void create_grid_mesh(TriMesh &mesh, uint32_t rows, uint32_t cols,
             // std::cout << std::endl;
         }
     }
+
+    mesh.request_vertex_texcoords2D();
+    for (auto vi = mesh.vertices_begin(); vi != mesh.vertices_end(); ++vi)
+    {
+        const auto& point = mesh.point(*vi);
+        mesh.set_texcoord2D(*vi, {point[0], point[1]});
+    }
+    //mesh.release_vertex_texcoords2D();    
 }
 
 template <typename decimal>
@@ -274,4 +283,25 @@ void mesh_uv_to_vecs(const TriMesh& mesh, std::vector<scalar_t>& x, std::vector<
         y[i] = uv[1];
         z[i] = point[2];
 	}
+}
+
+
+bool save_points_obj(const TriMesh& mesh, const std::string& filename)
+{
+    try
+    {
+        std::cout << "-- Saving points " << filename << std::endl;
+        std::ofstream out(filename, std::ios::out);
+        for (auto vi = mesh.vertices_begin(); vi != mesh.vertices_end(); ++vi)
+        {
+            out << std::fixed << "v " << mesh.point(*vi) << '\n';
+        }
+        out.close();
+        return true;
+    }
+    catch (const std::exception &ex)
+    {
+        std::cerr << ex.what() << std::endl;
+        return false;
+    }   
 }
