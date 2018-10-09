@@ -47,6 +47,7 @@ int main(int argc, char* argv[])
 
     std::cout << "-- Copying uv array" << std::endl;
     timer tm_copy_array;
+
     std::vector<decimal_t> uv_array(mesh.n_vertices() * dimension);
     size_t uv_index = 0;
     for (auto index = 0; index < mesh.n_vertices(); ++index)
@@ -86,8 +87,10 @@ int main(int argc, char* argv[])
     // build uv query flann
     //
     flann::Matrix<decimal_t> query(uv_query.data(), uv_query.size() / dimension, dimension);
-    flann::Matrix<int> indices(new int[query.rows * neighbours_count], query.rows, neighbours_count);
-    flann::Matrix<decimal_t> dists(new decimal_t[query.rows * neighbours_count], query.rows, neighbours_count);
+    std::unique_ptr<int> indices_buffer(new int[query.rows * neighbours_count]);
+    flann::Matrix<int> indices(indices_buffer.get(), query.rows, neighbours_count);
+    std::unique_ptr<decimal_t> dists_buffer(new decimal_t[query.rows * neighbours_count]);
+    flann::Matrix<decimal_t> dists(dists_buffer.get(), query.rows, neighbours_count);
     tm_kdtree_build_query.stop();
 
 
@@ -99,9 +102,6 @@ int main(int argc, char* argv[])
     index.knnSearch(query, indices, dists, neighbours_count, flann::SearchParams(knn_search_checks));	//flann::SearchParams(128));
     tm_kdtree_search.stop();
 
-
-
-    //std::cout << "-- Indices: " << indices.rows << ' ' << indices.cols << std::endl;
 
     timer tm_update_grid;
     for (auto i = 0; i < indices.rows; ++i)
@@ -141,8 +141,6 @@ int main(int argc, char* argv[])
 #endif        
     }
     tm_update_grid.stop();
-
-
 
 
 
