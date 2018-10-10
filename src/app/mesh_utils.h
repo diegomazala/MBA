@@ -72,7 +72,7 @@ static bool load_mesh(TriMesh &mesh, const std::string &filename)
     mesh.request_vertex_normals();
     try
     {
-        std::cout << "-- Loading mesh " << filename << std::endl;
+        std::cout << "-- Loading mesh  " << filename << std::endl;
         OpenMesh::IO::Options OptionRead(OpenMesh::IO::Options::VertexTexCoord);
         return OpenMesh::IO::read_mesh(mesh, filename, OptionRead);
     }
@@ -83,13 +83,11 @@ static bool load_mesh(TriMesh &mesh, const std::string &filename)
     }
 }
 
-static bool save_mesh(TriMesh &mesh, const std::string &filename)
+static bool save_mesh(const TriMesh &mesh, const std::string &filename)
 {
     try
     {
-        std::cout << "-- Saving mesh " << filename << std::endl;
-        mesh.request_vertex_texcoords2D();
-        mesh.request_vertex_normals();
+        std::cout << "-- Saving mesh   " << filename << std::endl;
         OpenMesh::IO::Options OptionWrite(
             OpenMesh::IO::Options::
                 VertexTexCoord); // | OpenMesh::IO::Options::VertexNormal);
@@ -286,7 +284,8 @@ void mesh_uv_to_vecs(const TriMesh& mesh, std::vector<scalar_t>& x, std::vector<
 }
 
 template <typename scalar_t>
-void mesh_uv_to_vecs(const TriMesh& mesh, std::vector<scalar_t>& x, std::vector<scalar_t>& y, std::vector<scalar_t>& z, std::vector<scalar_t>& uv)
+void mesh_uv_to_vecs(const TriMesh& mesh, std::vector<scalar_t>& x, std::vector<scalar_t>& y, std::vector<scalar_t>& z, 
+                    std::vector<scalar_t>& uv, std::vector<scalar_t>& u, std::vector<scalar_t>& v)
 {
     if (x.size() != mesh.n_vertices())
         x.resize(mesh.n_vertices());
@@ -300,6 +299,12 @@ void mesh_uv_to_vecs(const TriMesh& mesh, std::vector<scalar_t>& x, std::vector<
     if (uv.size() != mesh.n_vertices() * 2)
         uv.resize(mesh.n_vertices() * 2);
 
+    if (u.size() != mesh.n_vertices())
+        u.resize(mesh.n_vertices());
+    
+    if (v.size() != mesh.n_vertices())
+        v.resize(mesh.n_vertices());
+
     size_t i = 0;
     size_t uv_ind = 0;
 	for (auto vi = mesh.vertices_begin(); vi != mesh.vertices_end(); ++vi, ++i)
@@ -312,6 +317,9 @@ void mesh_uv_to_vecs(const TriMesh& mesh, std::vector<scalar_t>& x, std::vector<
 
         uv[uv_ind++] = _uv[0]; 
         uv[uv_ind++] = _uv[1];
+
+        u[i] = _uv[0];
+        v[i] = _uv[1];
 	}
 }
 

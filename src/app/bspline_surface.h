@@ -84,16 +84,6 @@ class bspline_t
     using matrix_t = std::vector<std::vector<decimal_t>>;
     using matrix4_t = std::array<std::array<decimal_t, 4>, 4>;
 
-    struct xyzuv_t 
-    { 
-        decimal_t x, y, z, u, v, s, t; 
-        xyzuv_t()
-        {
-            x = y = z = u = v = s = t = std::numeric_limits<decimal_t>::max();
-        }
-    };
-    using matrix_xyzuv_t = std::vector<std::vector<xyzuv_t>>;
-
     bspline_t() = default;
     virtual ~bspline_t() = default;
     bspline_t(const bspline_t &) = default;
@@ -107,7 +97,9 @@ class bspline_t
               const decimal_t *_z_vec_ptr, size_t _point_count, uint32_t _m,
               uint32_t _n)
         : x_ptr(_x_vec_ptr), y_ptr(_y_vec_ptr), z_ptr(_z_vec_ptr),
-          point_count(_point_count), m(_m), n(_n), delta_z(point_count)
+          point_count(_point_count), m(_m), n(_n), 
+          phi((m + 3), std::vector<decimal_t>(n + 3, 0)),
+          delta_z(point_count)
     {
         this->init();
     }
@@ -119,24 +111,13 @@ class bspline_t
     {
         matrix_t delta = {(m + 3), std::vector<decimal_t>(n + 3, 0)};
         matrix_t omega = {(m + 3), std::vector<decimal_t>(n + 3, 0)};
-        this->phi = {(m + 3), std::vector<decimal_t>(n + 3, 0)};
+        //this->phi = {(m + 3), std::vector<decimal_t>(n + 3, 0)};
 
-        this->xyzuv = {(m + 3), std::vector<xyzuv_t>(n + 3)};
-        
         const decimal_t interval_normalization_factor_u = m * urange_inv;
         const decimal_t interval_normalization_factor_v = n * vrange_inv;
 
         const decimal_t cell_x = static_cast<decimal_t>(1) / (m + 3 - 1);
         const decimal_t cell_y = static_cast<decimal_t>(1) / (n + 3 - 1); 
-
-        for (uint32_t i = 0; i < m + 3; ++i)
-        {
-            for (uint32_t j = 0; j < n + 3; ++j)
-            {
-                xyzuv[i][j].u = static_cast<decimal_t>(i) * cell_x;
-                xyzuv[i][j].v = static_cast<decimal_t>(j) * cell_y;
-            }
-        }
 
 
         for (size_t index = 0; index < point_count; ++index)
@@ -161,111 +142,6 @@ class bspline_t
             //std::cout << std::fixed << "[" << u << ' ' << v << "] : " << s << ' ' << t << '\n';
             //std::cout << std::fixed << "[" << i << ' ' << j << "] : " << s << ' ' << t << '\n';
             //std::cout << std::abs(u - s) + std::abs(v - t)  << std::endl;
-
-            {
-                int ii_0 = static_cast<int>(s / cell_x); 
-                int ii_1 = ii_0 + 1; 
-                auto uv_x = s / cell_x; 
-                auto left = std::floor(uv_x) * cell_x;
-                auto right = left + cell_x;
-                if (right > 1)
-                {
-                    right = 1;
-                    left = right - cell_x;
-                    ii_0--;
-                    ii_1--;
-                }
-
-                int jj_0 = static_cast<int>(t / cell_y); 
-                int jj_1 = jj_0 + 1; 
-                auto uv_y = t / cell_y;
-                auto bottom = std::floor(uv_y) * cell_y;
-                auto top = bottom + cell_y;
-                if (top > 1)
-                {
-                    top = 1;
-                    bottom = top - cell_y;
-                    jj_0--;
-                    jj_1--;
-                }
-
-                //std::cout << std::fixed << "[" << s << ' ' << t << "] : "  << left << ' ' << right << ' ' << bottom << ' ' << top << '\n';
-                //std::cout << std::fixed << "[" << s << ' ' << t << "] : "  << ii_0 << ' ' << ii_1 << ' ' << jj_0 << ' ' << jj_1 << '\n';
-                //std::cout << std::fixed << "[" << uv_i << ' ' << uv_j << "] : "  << top << ' ' << bottom << '\n';
-
-                // update from distance for 4 neighbours
-                {
-                    {
-                        // left bottom
-                        auto& pt = xyzuv[ii_0][jj_0];
-
-                        auto dist_stuv = std::sqrt(std::pow(s - pt.u, 2) + std::pow(t - pt.v, 2));
-                        auto dist_stst = std::sqrt(std::pow(s - pt.s, 2) + std::pow(t - pt.t, 2));
-
-                        if (dist_stuv < dist_stst)
-                        {
-                            pt.x = x;
-                            pt.y = y;
-                            pt.z = z + average_z;
-                            pt.s = s;
-                            pt.t = t;
-                        }
-                    }
-
-                    {
-                        // left top
-                        auto& pt = xyzuv[ii_0][jj_1];
-
-                        auto dist_stuv = std::sqrt(std::pow(s - pt.u, 2) + std::pow(t - pt.v, 2));
-                        auto dist_stst = std::sqrt(std::pow(s - pt.s, 2) + std::pow(t - pt.t, 2));
-
-                        if (dist_stuv < dist_stst)
-                        {
-                            pt.x = x;
-                            pt.y = y;
-                            pt.z = z + average_z;
-                            pt.s = s;
-                            pt.t = t;
-                        }
-                    }
-
-                    {
-                        // right bottom
-                        auto& pt = xyzuv[ii_1][jj_0];
-
-                        auto dist_stuv = std::sqrt(std::pow(s - pt.u, 2) + std::pow(t - pt.v, 2));
-                        auto dist_stst = std::sqrt(std::pow(s - pt.s, 2) + std::pow(t - pt.t, 2));
-
-                        if (dist_stuv < dist_stst)
-                        {
-                            pt.x = x;
-                            pt.y = y;
-                            pt.z = z + average_z;
-                            pt.s = s;
-                            pt.t = t;
-                        }
-                    }
-
-                    {
-                        // right top
-                        auto& pt = xyzuv[ii_1][jj_1];
-
-                        auto dist_stuv = std::sqrt(std::pow(s - pt.u, 2) + std::pow(t - pt.v, 2));
-                        auto dist_stst = std::sqrt(std::pow(s - pt.s, 2) + std::pow(t - pt.t, 2));
-
-                        if (dist_stuv < dist_stst)
-                        {
-                            pt.x = x;
-                            pt.y = y;
-                            pt.z = z + average_z;
-                            pt.s = s;
-                            pt.t = t;
-                        }
-                    }
-                }
-    
-                
-            }
 
             //
             // Compute w_kl's and sum_sum w²_ab
@@ -309,7 +185,7 @@ class bspline_t
                     // this->phi[i][j] = delta[i][j] / omega[i][j];
                     
                     // here we remove the offset inserted in the begining of the algorithm
-                    this->phi[i][j] = delta[i][j] / omega[i][j] + this->average_z;
+                    this->phi[i][j] += delta[i][j] / omega[i][j] + this->average_z;
                 }
                 else
                 {
@@ -317,42 +193,10 @@ class bspline_t
                     // this->phi[i][j] = 0;
 
                     // here we remove the offset inserted in the begining of the algorithm
-                    this->phi[i][j] = average_z;
+                    this->phi[i][j] += average_z;
                 }
             }
         }
-
-#if 0
-        std::cout << std::fixed << "delta \n";
-        for (const auto& v1 : delta)
-        {
-            for (const auto& v2 : v1)
-            {
-                std::cout << v2 << ' ';
-            }
-            std::cout << std::endl;
-        }
-
-        std::cout << "omega \n";
-        for (const auto& v1 : omega)
-        {
-            for (const auto& v2 : v1)
-            {
-                std::cout << v2 << ' ';
-            }
-            std::cout << std::endl;
-        }
-
-        std::cout << "phi \n";
-        for (const auto& v1 : phi)
-        {
-            for (const auto& v2 : v1)
-            {
-                std::cout << v2 << ' ';
-            }
-            std::cout << std::endl;
-        }
-#endif        
     }
 
     
@@ -593,7 +437,6 @@ class bspline_t
     decimal_t umin, vmin, umax, vmax, urange_inv, vrange_inv, average_z;
     std::vector<decimal_t> delta_z;
 
-    matrix_xyzuv_t xyzuv;
 };
 
 } // namespace surface
